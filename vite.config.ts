@@ -12,4 +12,9 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  // Fora do sandbox Lovable o Nitro é desabilitado por padrão. O preset "vercel" gera
+  // .vercel/output no formato que a Vercel espera (SSR + rotas dinâmicas).
+  nitro: {
+    preset: "vercel",
+  },
 });
