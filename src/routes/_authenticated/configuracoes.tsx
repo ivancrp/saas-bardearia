@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { ExternalLink, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
+import { ImageInput } from "@/components/image-input";
+import { normalizeHex, readableTextOn } from "@/components/public-booking/brand";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,6 +30,7 @@ function ConfigPage() {
     tagline: "",
     brand_color: "#0ea5e9",
     brand_accent: "#6366f1",
+    logo_url: "",
     cover_url: "",
   });
 
@@ -40,6 +43,7 @@ function ConfigPage() {
         tagline: (company as any).tagline ?? "",
         brand_color: (company as any).brand_color ?? "#0ea5e9",
         brand_accent: (company as any).brand_accent ?? "#6366f1",
+        logo_url: (company as any).logo_url ?? "",
         cover_url: (company as any).cover_url ?? "",
       });
   }, [company?.id]);
@@ -56,6 +60,7 @@ function ConfigPage() {
           tagline: form.tagline.trim() || null,
           brand_color: form.brand_color,
           brand_accent: form.brand_accent,
+          logo_url: form.logo_url.trim() || null,
           cover_url: form.cover_url.trim() || null,
         })
         .eq("id", company.id);
@@ -88,6 +93,9 @@ function ConfigPage() {
   const applyPalette = (brand: string, accent: string) =>
     setForm((f) => ({ ...f, brand_color: brand, brand_accent: accent }));
 
+  const previewBrand = normalizeHex(form.brand_color, "#0ea5e9");
+  const previewAccent = normalizeHex(form.brand_accent, "#6366f1");
+
   return (
     <AppShell>
       <div className="px-4 md:px-8 py-8 max-w-3xl mx-auto">
@@ -109,24 +117,42 @@ function ConfigPage() {
                 onChange={(e) => setForm({ ...form, tagline: e.target.value })}
               />
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="grid gap-1.5">
-                <Label>Telefone</Label>
-                <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
-              </div>
-              <div className="grid gap-1.5">
-                <Label>Imagem de capa (URL)</Label>
-                <Input
-                  placeholder="https://..."
-                  value={form.cover_url}
-                  onChange={(e) => setForm({ ...form, cover_url: e.target.value })}
-                />
-              </div>
+            <div className="grid gap-1.5">
+              <Label>Telefone</Label>
+              <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
             </div>
             <div className="grid gap-1.5">
               <Label>Endereço</Label>
               <Textarea rows={2} value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
             </div>
+          </div>
+        </section>
+
+        {/* IMAGENS */}
+        <section className="rounded-2xl border border-border bg-card p-6 mb-6">
+          <h2 className="font-semibold mb-1">Imagens</h2>
+          <p className="text-sm text-muted-foreground mb-4">
+            Envie um arquivo do seu dispositivo ou informe a URL de uma imagem já hospedada.
+          </p>
+
+          <div className="grid gap-5 sm:grid-cols-2">
+            <ImageInput
+              label="Logo"
+              kind="logo"
+              companyId={company?.id}
+              value={form.logo_url}
+              onChange={(url) => setForm((f) => ({ ...f, logo_url: url }))}
+              fallbackChar={form.name.charAt(0) || "?"}
+              previewClassName="size-20 rounded-2xl"
+            />
+            <ImageInput
+              label="Imagem de capa"
+              kind="cover"
+              companyId={company?.id}
+              value={form.cover_url}
+              onChange={(url) => setForm((f) => ({ ...f, cover_url: url }))}
+              previewClassName="h-20 w-full rounded-xl"
+            />
           </div>
         </section>
 
@@ -191,12 +217,18 @@ function ConfigPage() {
 
           {/* Preview */}
           <div
-            className="mt-5 rounded-2xl p-5 text-white overflow-hidden relative"
-            style={{ background: `linear-gradient(135deg, ${form.brand_color}, ${form.brand_accent})` }}
+            className="mt-5 rounded-2xl p-5 overflow-hidden relative"
+            style={{ background: previewBrand, color: readableTextOn(previewBrand) }}
           >
             <p className="text-xs uppercase tracking-wider opacity-80">Pré-visualização</p>
             <p className="font-bold text-xl mt-1">{form.name || "Sua empresa"}</p>
             {form.tagline && <p className="text-sm opacity-90">{form.tagline}</p>}
+            <span
+              className="mt-3 inline-flex items-center rounded-lg px-3 py-1.5 text-xs font-semibold"
+              style={{ background: previewAccent, color: readableTextOn(previewAccent) }}
+            >
+              Botão de destaque
+            </span>
           </div>
         </section>
 

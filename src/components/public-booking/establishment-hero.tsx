@@ -16,9 +16,14 @@ export function EstablishmentHero({ company, theme, session, onSignOut }: Establ
   const userLabel =
     session?.user?.user_metadata?.full_name || session?.user?.email?.split("@")[0] || "Cliente";
 
+  const hasCover = !!company.cover_url;
+
   return (
-    <header className="relative text-white overflow-hidden" style={getHeroStyle(company, theme)}>
-      <div className="absolute inset-0 bg-gradient-to-b from-black/25 via-black/10 to-black/40" />
+    <header
+      className="relative overflow-hidden"
+      style={{ ...getHeroStyle(company, theme), color: hasCover ? "#ffffff" : theme.onBrand }}
+    >
+      {hasCover && <div className="absolute inset-0 bg-black/45" />}
       <div className="relative max-w-3xl mx-auto px-4 pt-10 pb-16 md:pt-14 md:pb-20">
         <Badge className="mb-4 border-white/20 bg-white/15 text-white backdrop-blur hover:bg-white/20">
           <Sparkles className="size-3 mr-1" />

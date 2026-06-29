@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
+import { ImageInput } from "@/components/image-input";
 import { PageHeader, EmptyState } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -76,7 +77,7 @@ function ProfissionaisPage() {
                   <Plus className="size-4" /> Novo profissional
                 </Button>
               </DialogTrigger>
-              <ProDialog companyId={companyId} pro={editing} onClose={() => { setOpen(false); setEditing(null); }} />
+              <ProDialog key={editing?.id ?? "new"} companyId={companyId} pro={editing} onClose={() => { setOpen(false); setEditing(null); }} />
             </Dialog>
           }
         />
@@ -90,12 +91,20 @@ function ProfissionaisPage() {
             {pros.map((p) => (
               <div key={p.id} className="rounded-2xl border border-border bg-card p-4">
                 <div className="flex items-start gap-3">
-                  <div
-                    className="size-12 rounded-full flex items-center justify-center text-base font-semibold text-background shrink-0"
-                    style={{ backgroundColor: p.color }}
-                  >
-                    {p.name.charAt(0).toUpperCase()}
-                  </div>
+                  {p.avatar_url ? (
+                    <img
+                      src={p.avatar_url}
+                      alt={p.name}
+                      className="size-12 rounded-full object-cover shrink-0"
+                    />
+                  ) : (
+                    <div
+                      className="size-12 rounded-full flex items-center justify-center text-base font-semibold text-background shrink-0"
+                      style={{ backgroundColor: p.color }}
+                    >
+                      {p.name.charAt(0).toUpperCase()}
+                    </div>
+                  )}
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <p className="font-semibold truncate">{p.name}</p>
@@ -145,6 +154,7 @@ function ProDialog({
     name: pro?.name ?? "",
     phone: pro?.phone ?? "",
     email: pro?.email ?? "",
+    avatar_url: pro?.avatar_url ?? "",
     color: pro?.color ?? COLORS[0],
     commission_pct: pro?.commission_pct?.toString() ?? "0",
     active: pro?.active ?? true,
@@ -185,6 +195,7 @@ function ProDialog({
         name: form.name.trim(),
         phone: form.phone.trim() || null,
         email: form.email.trim() || null,
+        avatar_url: form.avatar_url.trim() || null,
         color: form.color,
         commission_pct: Number(form.commission_pct) || 0,
         active: form.active,
@@ -222,10 +233,24 @@ function ProDialog({
     setServiceIds(next);
   };
 
+  const allSelected = services.length > 0 && services.every((s) => serviceIds.has(s.id));
+  const someSelected = services.some((s) => serviceIds.has(s.id));
+  const toggleAll = () =>
+    setServiceIds(allSelected ? new Set() : new Set(services.map((s) => s.id)));
+
   return (
     <DialogContent className="max-h-[90vh] overflow-y-auto">
       <DialogHeader><DialogTitle>{pro ? "Editar profissional" : "Novo profissional"}</DialogTitle></DialogHeader>
       <div className="grid gap-3">
+        <ImageInput
+          label="Foto do profissional"
+          kind="avatar"
+          companyId={companyId ?? undefined}
+          value={form.avatar_url}
+          onChange={(url) => setForm({ ...form, avatar_url: url })}
+          fallbackChar={form.name.charAt(0).toUpperCase() || "?"}
+          previewClassName="size-20 rounded-full"
+        />
         <div className="grid gap-1.5">
           <Label htmlFor="p-name">Nome *</Label>
           <Input id="p-name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
@@ -264,6 +289,15 @@ function ProDialog({
           <div className="grid gap-1.5">
             <Label>Serviços atendidos</Label>
             <div className="grid gap-1.5 rounded-xl border border-border p-3 max-h-40 overflow-y-auto">
+              <label className="flex items-center gap-2 text-sm font-medium cursor-pointer border-b border-border pb-2 mb-1">
+                <input
+                  type="checkbox"
+                  checked={allSelected}
+                  ref={(el) => { if (el) el.indeterminate = !allSelected && someSelected; }}
+                  onChange={toggleAll}
+                />
+                Marcar todos
+              </label>
               {services.map((s) => (
                 <label key={s.id} className="flex items-center gap-2 text-sm cursor-pointer">
                   <input type="checkbox" checked={serviceIds.has(s.id)} onChange={() => toggleService(s.id)} />

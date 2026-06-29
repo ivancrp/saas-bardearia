@@ -4,6 +4,13 @@ import { useMemo, useState } from "react";
 import { ArrowLeft, Calendar, Check, User } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
 import { supabase } from "@/integrations/supabase/client";
 import { fmtBRL, fmtDateTime, fmtDuration } from "@/lib/format";
 import { buildAvailableSlots } from "./slots";
@@ -20,13 +27,13 @@ type BookingFlowProps = {
 type BookingStep = "professional" | "schedule" | "confirm";
 
 const STEPS: { id: BookingStep; label: string }[] = [
-  { id: "professional", label: "Profissional" },
   { id: "schedule", label: "Horário" },
+  { id: "professional", label: "Profissional" },
   { id: "confirm", label: "Confirmar" },
 ];
 
 export function BookingFlow({ company, session, service, theme, onBack }: BookingFlowProps) {
-  const [step, setStep] = useState<BookingStep>("professional");
+  const [step, setStep] = useState<BookingStep>("schedule");
   const [proId, setProId] = useState("");
   const [slot, setSlot] = useState("");
   const [done, setDone] = useState(false);
@@ -46,7 +53,7 @@ export function BookingFlow({ company, session, service, theme, onBack }: Bookin
       const ids = (links ?? []).map((l) => l.professional_id);
       const { data, error } = await supabase
         .from("professionals")
-        .select("id, name, color, commission_pct, active")
+        .select("id, name, color, avatar_url, commission_pct, active")
         .eq("company_id", company.id)
         .eq("active", true)
         .in("id", ids.length ? ids : ["00000000-0000-0000-0000-000000000000"])
@@ -86,8 +93,8 @@ export function BookingFlow({ company, session, service, theme, onBack }: Bookin
     return (
       <div className="rounded-3xl border border-border bg-card p-6 md:p-8 shadow-card text-center">
         <div
-          className="size-20 rounded-full flex items-center justify-center mx-auto mb-5 text-white shadow-lg"
-          style={{ background: theme.gradient }}
+          className="size-20 rounded-full flex items-center justify-center mx-auto mb-5 shadow-lg"
+          style={{ background: theme.brand, color: theme.onBrand }}
         >
           <Check className="size-10" />
         </div>
@@ -121,29 +128,27 @@ export function BookingFlow({ company, session, service, theme, onBack }: Bookin
 
       <StepIndicator current={step} theme={theme} />
 
-      {step === "professional" && (
-        <ProfessionalStep
-          pros={pros}
-          proId={proId}
-          theme={theme}
-          onSelect={(id) => {
-            setProId(id);
-            setSlot("");
-          }}
-          onContinue={() => setStep("schedule")}
-          canContinue={!!proId}
-        />
-      )}
-
       {step === "schedule" && (
         <ScheduleStep
           slotsByDay={slotsByDay}
           slot={slot}
           theme={theme}
           onSelect={setSlot}
-          onBack={() => setStep("professional")}
-          onContinue={() => setStep("confirm")}
+          onBack={onBack}
+          onContinue={() => setStep("professional")}
           canContinue={!!slot}
+        />
+      )}
+
+      {step === "professional" && (
+        <ProfessionalStep
+          pros={pros}
+          proId={proId}
+          theme={theme}
+          onSelect={setProId}
+          onBack={() => setStep("schedule")}
+          onContinue={() => setStep("confirm")}
+          canContinue={!!proId}
         />
       )}
 
@@ -154,7 +159,7 @@ export function BookingFlow({ company, session, service, theme, onBack }: Bookin
           slotLabel={selectedSlot ? fmtDateTime(selectedSlot.iso) : ""}
           theme={theme}
           isPending={book.isPending}
-          onBack={() => setStep("schedule")}
+          onBack={() => setStep("professional")}
           onConfirm={() => book.mutate()}
         />
       )}
@@ -164,7 +169,7 @@ export function BookingFlow({ company, session, service, theme, onBack }: Bookin
 
 function ServiceSummary({ service, theme }: { service: PublicService; theme: BrandTheme }) {
   return (
-    <div className="rounded-2xl p-4 mb-6 text-white" style={{ background: theme.gradient }}>
+    <div className="rounded-2xl p-4 mb-6" style={{ background: theme.brand, color: theme.onBrand }}>
       <p className="text-xs uppercase tracking-wide opacity-80">Serviço selecionado</p>
       <p className="font-bold text-lg mt-0.5">{service.name}</p>
       <p className="text-sm opacity-90 mt-1">
@@ -187,9 +192,11 @@ function StepIndicator({ current, theme }: { current: BookingStep; theme: BrandT
             <div
               className="mx-auto mb-1.5 flex size-8 items-center justify-center rounded-full text-xs font-bold transition-colors"
               style={
-                active || done
-                  ? { background: theme.gradient, color: "#fff" }
-                  : { background: "hsl(var(--muted))", color: "hsl(var(--muted-foreground))" }
+                done
+                  ? { background: theme.accent, color: theme.onAccent }
+                  : active
+                    ? { background: theme.brand, color: theme.onBrand }
+                    : { background: "hsl(var(--muted))", color: "hsl(var(--muted-foreground))" }
               }
             >
               {done ? <Check className="size-4" /> : index + 1}
@@ -209,6 +216,7 @@ function ProfessionalStep({
   proId,
   theme,
   onSelect,
+  onBack,
   onContinue,
   canContinue,
 }: {
@@ -216,44 +224,81 @@ function ProfessionalStep({
   proId: string;
   theme: BrandTheme;
   onSelect: (id: string) => void;
+  onBack: () => void;
   onContinue: () => void;
   canContinue: boolean;
 }) {
+  if (pros.length === 0) {
+    return (
+      <div>
+        <SectionTitle icon={User} title="Escolha o profissional" />
+        <EmptyState text="Nenhum profissional atende este serviço no momento." />
+        <div className="mt-6 flex gap-2">
+          <Button type="button" variant="outline" className="flex-1" onClick={onBack}>
+            Voltar
+          </Button>
+          <ContinueButton disabled theme={theme} onClick={onContinue} label="Revisar" className="flex-1" />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
-      <SectionTitle icon={User} title="Escolha o profissional" />
+      <Carousel opts={{ align: "start" }} className="w-full">
+        <div className="mb-4 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <User className="size-4 text-muted-foreground" />
+            <p className="text-sm font-semibold">Escolha o profissional</p>
+          </div>
+          <div className="flex gap-1">
+            <CarouselPrevious className="static translate-x-0 translate-y-0 size-8" />
+            <CarouselNext className="static translate-x-0 translate-y-0 size-8" />
+          </div>
+        </div>
 
-      {pros.length === 0 ? (
-        <EmptyState text="Nenhum profissional atende este serviço no momento." />
-      ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <CarouselContent className="-ml-3">
           {pros.map((pro) => {
             const selected = proId === pro.id;
             return (
-              <button
-                key={pro.id}
-                type="button"
-                onClick={() => onSelect(pro.id)}
-                className="flex flex-col items-center gap-2 rounded-2xl border-2 p-4 transition-all"
-                style={{
-                  borderColor: selected ? theme.brand : "hsl(var(--border))",
-                  background: selected ? `${theme.brand}12` : "transparent",
-                }}
-              >
-                <div
-                  className="size-14 rounded-full flex items-center justify-center font-bold text-white text-lg"
-                  style={{ backgroundColor: pro.color }}
+              <CarouselItem key={pro.id} className="pl-3 basis-1/2 sm:basis-1/3">
+                <button
+                  type="button"
+                  onClick={() => onSelect(pro.id)}
+                  className="w-full h-full flex flex-col items-center gap-2 rounded-2xl border-2 p-4 transition-all"
+                  style={{
+                    borderColor: selected ? theme.brand : "hsl(var(--border))",
+                    background: selected ? `${theme.brand}12` : "transparent",
+                  }}
                 >
-                  {pro.name.charAt(0)}
-                </div>
-                <span className="text-sm font-medium text-center leading-tight line-clamp-2">{pro.name}</span>
-              </button>
+                  {pro.avatar_url ? (
+                    <img
+                      src={pro.avatar_url}
+                      alt={pro.name}
+                      className="size-14 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div
+                      className="size-14 rounded-full flex items-center justify-center font-bold text-white text-lg"
+                      style={{ backgroundColor: pro.color }}
+                    >
+                      {pro.name.charAt(0)}
+                    </div>
+                  )}
+                  <span className="text-sm font-medium text-center leading-tight line-clamp-2">{pro.name}</span>
+                </button>
+              </CarouselItem>
             );
           })}
-        </div>
-      )}
+        </CarouselContent>
+      </Carousel>
 
-      <ContinueButton disabled={!canContinue} theme={theme} onClick={onContinue} label="Escolher horário" />
+      <div className="mt-6 flex gap-2">
+        <Button type="button" variant="outline" className="flex-1" onClick={onBack}>
+          Voltar
+        </Button>
+        <ContinueButton disabled={!canContinue} theme={theme} onClick={onContinue} label="Revisar" className="flex-1" />
+      </div>
     </div>
   );
 }
@@ -313,7 +358,7 @@ function ScheduleStep({
         <Button type="button" variant="outline" className="flex-1" onClick={onBack}>
           Voltar
         </Button>
-        <ContinueButton disabled={!canContinue} theme={theme} onClick={onContinue} label="Revisar" className="flex-1" />
+        <ContinueButton disabled={!canContinue} theme={theme} onClick={onContinue} label="Escolher profissional" className="flex-1" />
       </div>
     </div>
   );
@@ -355,8 +400,8 @@ function ConfirmStep({
           type="button"
           disabled={isPending}
           onClick={onConfirm}
-          className="flex-1 h-11 text-white font-semibold"
-          style={{ background: theme.gradient }}
+          className="flex-1 h-11 font-semibold"
+          style={{ background: theme.brand, color: theme.onBrand }}
         >
           {isPending ? "Confirmando…" : "Confirmar agendamento"}
         </Button>
@@ -411,8 +456,8 @@ function ContinueButton({
       type="button"
       disabled={disabled}
       onClick={onClick}
-      className={`mt-6 w-full h-11 text-white font-semibold ${className ?? ""}`}
-      style={{ background: theme.gradient }}
+      className={`mt-6 w-full h-11 font-semibold ${className ?? ""}`}
+      style={{ background: theme.brand, color: theme.onBrand }}
     >
       {label}
     </Button>

@@ -25,6 +25,7 @@ export type PublicProfessional = {
   id: string;
   name: string;
   color: string;
+  avatar_url: string | null;
   commission_pct: number | null;
   active: boolean;
 };
@@ -32,7 +33,8 @@ export type PublicProfessional = {
 export type BrandTheme = {
   brand: string;
   accent: string;
-  gradient: string;
+  onBrand: string;
+  onAccent: string;
 };
 
 export type TimeSlot = {

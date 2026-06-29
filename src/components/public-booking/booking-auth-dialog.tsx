@@ -76,14 +76,16 @@ export function BookingAuthDialog({ open, companyName, service, theme, onClose }
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
       <DialogContent className="max-w-md gap-0 overflow-hidden p-0 sm:rounded-3xl">
-        <div className="p-6 text-white" style={{ background: theme.gradient }}>
+        <div className="p-6" style={{ background: theme.brand, color: theme.onBrand }}>
           <DialogHeader className="text-left space-y-2">
-            <div className="size-11 rounded-2xl bg-white/20 flex items-center justify-center mb-1">
+            <div className="size-11 rounded-2xl bg-black/15 flex items-center justify-center mb-1">
               <Calendar className="size-5" />
             </div>
-            <DialogTitle className="text-white text-lg">Entre para continuar</DialogTitle>
-            <DialogDescription className="text-white/85 text-sm">
-              Confirme <strong className="text-white">{service.name}</strong> em {companyName}.
+            <DialogTitle className="text-lg" style={{ color: theme.onBrand }}>
+              Entre para continuar
+            </DialogTitle>
+            <DialogDescription className="text-sm opacity-85" style={{ color: theme.onBrand }}>
+              Confirme <strong>{service.name}</strong> em {companyName}.
             </DialogDescription>
           </DialogHeader>
         </div>
@@ -121,8 +123,8 @@ export function BookingAuthDialog({ open, companyName, service, theme, onClose }
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="mt-1 text-white"
-                  style={{ background: theme.gradient }}
+                  className="mt-1"
+                  style={{ background: theme.brand, color: theme.onBrand }}
                 >
                   {loading && <Loader2 className="animate-spin" />}
                   Criar conta e continuar
@@ -137,8 +139,8 @@ export function BookingAuthDialog({ open, companyName, service, theme, onClose }
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="mt-1 text-white"
-                  style={{ background: theme.gradient }}
+                  className="mt-1"
+                  style={{ background: theme.brand, color: theme.onBrand }}
                 >
                   {loading && <Loader2 className="animate-spin" />}
                   Entrar
