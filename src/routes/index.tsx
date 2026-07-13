@@ -1,14 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Calendar, Scissors, ShieldCheck, Smartphone } from "lucide-react";
+import { Calendar, MapPin, Scissors, ShieldCheck, Smartphone } from "lucide-react";
+import { FindEstablishment } from "@/components/find-establishment";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "Agenda SaaS — Gestão completa para barbearias" },
-      { name: "description", content: "Plataforma multiempresa de agendamento, clientes, comissões e financeiro. Mobile-first e elegante." },
+      { name: "description", content: "Encontre um estabelecimento e agende online, ou gerencie sua barbearia com agenda, clientes, comissões e financeiro." },
       { property: "og:title", content: "Agenda SaaS — Gestão para barbearias" },
-      { property: "og:description", content: "Agenda visual, agendamento online, comissões e financeiro em um só lugar." },
+      { property: "og:description", content: "Encontre barbearias e agende online. Para donos: agenda visual, comissões e financeiro." },
     ],
   }),
   component: Landing,
@@ -25,13 +26,16 @@ function Landing() {
           <span className="font-bold">Agenda SaaS</span>
         </div>
         <div className="flex items-center gap-2">
+          <Button asChild variant="ghost" size="sm">
+            <a href="#encontrar">Encontrar</a>
+          </Button>
           <Button asChild variant="ghost" size="sm"><Link to="/auth">Entrar</Link></Button>
           <Button asChild size="sm"><Link to="/auth">Começar grátis</Link></Button>
         </div>
       </header>
 
       <main className="px-4 md:px-8 max-w-6xl mx-auto">
-        <section className="py-16 md:py-28 text-center">
+        <section className="py-14 md:py-20 text-center">
           <span className="inline-block text-xs font-medium rounded-full bg-surface px-3 py-1 text-primary border border-border">
             Multi-empresa • Mobile-first • Premium
           </span>
@@ -43,11 +47,18 @@ function Landing() {
             Agenda visual, agendamento online, gestão de clientes, profissionais, comissões e
             financeiro — numa experiência elegante e responsiva.
           </p>
-          <div className="mt-8 flex gap-3 justify-center">
+          <div className="mt-8 flex flex-wrap gap-3 justify-center">
             <Button asChild size="lg"><Link to="/auth">Criar minha conta</Link></Button>
-            <Button asChild size="lg" variant="secondary"><Link to="/auth">Entrar</Link></Button>
+            <Button asChild size="lg" variant="secondary">
+              <a href="#encontrar">
+                <MapPin className="size-4" />
+                Encontrar estabelecimento
+              </a>
+            </Button>
           </div>
         </section>
+
+        <FindEstablishment />
 
         <section className="grid md:grid-cols-3 gap-4 pb-24">
           <Feature icon={Calendar} title="Agenda visual" text="Visualize seu dia/semana estilo Google Calendar com prevenção de conflitos." />
